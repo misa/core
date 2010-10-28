@@ -23,6 +23,7 @@ Class Kohana_TextTest extends Kohana_Unittest_TestCase
 	 * an empty input was provided
 	 *
 	 * @test
+	 * @covers Text::auto_p
 	 */
 	public function test_auto_para_returns_empty_string_on_empty_input()
 	{
@@ -52,6 +53,7 @@ Class Kohana_TextTest extends Kohana_Unittest_TestCase
 	 * in paragraphs
 	 *
 	 * @test
+	 * @covers Text::auto_p
 	 * @dataProvider provider_auto_para_does_not_enclose_html_tags_in_paragraphs
 	 */ 
 	public function test_auto_para_does_not_enclose_html_tags_in_paragraphs(array $tags, $text)
@@ -72,12 +74,27 @@ Class Kohana_TextTest extends Kohana_Unittest_TestCase
 	 * with paragraph tags
 	 *
 	 * @test
+	 * @covers Text::auto_p
 	 */
 	public function test_auto_para_encloses_slot_in_paragraph()
 	{
 		$text = 'Pick a pinch of purple pepper';
 
 		$this->assertSame('<p>'.$text.'</p>', Text::auto_p($text));
+	}
+
+	/**
+	 * Make sure that multiple new lines are replaced with paragraph tags
+	 *
+	 * @test
+	 * @covers Text::auto_p
+	 */
+	public function test_auto_para_replaces_multiple_newlines_with_paragraph()
+	{
+		$this->assertSame(
+			"<p>My name is john</p>\n\n<p>I'm a developer</p>",
+			Text::auto_p("My name is john\n\n\n\nI'm a developer")
+		);
 	}
 
 	/**
@@ -114,15 +131,18 @@ Class Kohana_TextTest extends Kohana_Unittest_TestCase
 	public function provider_limit_chars()
 	{
 		return array
-			(
-				// Some basic tests
-				array('', '', 100, NULL, FALSE),
-				array('…', 'BOO!', -42, NULL, FALSE),
-
-				// 
-				array('making php bet…', 'making php better for the sane', 14, NULL, FALSE),
-				array('making php better…', 'making php better for the sane', 14, NULL, TRUE),
-			);
+		(
+			array('', '', 100, NULL, FALSE),
+			array('…', 'BOO!', -42, NULL, FALSE),
+			array('making php bet…', 'making php better for the sane', 14, NULL, FALSE),
+			array('Garçon! Un café s.v.p.', 'Garçon! Un café s.v.p.', 50, '__', FALSE),
+			array('Garçon!__', 'Garçon! Un café s.v.p.', 8, '__', FALSE),
+			// @issue 3238
+			array('making php…', 'making php better for the sane', 14, NULL, TRUE),
+			array('Garçon!__', 'Garçon! Un café s.v.p.', 9, '__', TRUE),
+			array('Garçon!__', 'Garçon! Un café s.v.p.', 7, '__', TRUE),
+			array('__', 'Garçon! Un café s.v.p.', 5, '__', TRUE),
+		);
 	}
 
 	/**
@@ -240,6 +260,8 @@ Class Kohana_TextTest extends Kohana_Unittest_TestCase
 			array('numeric', 14),
 			array('distinct', 12),
 			array('aeiou', 4),
+			array('‹¡›«¿»', 8), // UTF8 characters
+			array(NULL, 8), // Issue #3256
 		);
 	}
 
@@ -258,6 +280,11 @@ Class Kohana_TextTest extends Kohana_Unittest_TestCase
 	 */
 	public function test_random($type, $length)
 	{
+		if ($type === NULL)
+		{
+			$type = 'alnum';
+		}
+
 		$pool = (string) $type;
 
 		switch ($pool)
@@ -282,7 +309,7 @@ Class Kohana_TextTest extends Kohana_Unittest_TestCase
 			break;
 		}
 		
-		$this->assertRegExp('/^['.$pool.']{'.$length.'}$/', Text::random($type, $length));
+		$this->assertRegExp('/^['.$pool.']{'.$length.'}$/u', Text::random($type, $length));
 	}
 
 	/**

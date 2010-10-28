@@ -5,8 +5,8 @@
  * @package    Kohana
  * @category   Helpers
  * @author     Kohana Team
- * @copyright  (c) 2007-2008 Kohana Team
- * @license    http://kohanaphp.com/license
+ * @copyright  (c) 2007-2010 Kohana Team
+ * @license    http://kohanaframework.org/license
  */
 class Kohana_Text {
 
@@ -72,7 +72,7 @@ class Kohana_Text {
 
 		// Only attach the end character if the matched string is shorter
 		// than the starting string.
-		return rtrim($matches[0]).(strlen($matches[0]) === strlen($str) ? '' : $end_char);
+		return rtrim($matches[0]).((strlen($matches[0]) === strlen($str)) ? '' : $end_char);
 	}
 
 	/**
@@ -99,14 +99,15 @@ class Kohana_Text {
 		if ($limit <= 0)
 			return $end_char;
 
-		if ($preserve_words == FALSE)
-		{
+		if ($preserve_words === FALSE)
 			return rtrim(UTF8::substr($str, 0, $limit)).$end_char;
-		}
 
-		preg_match('/^.{'.($limit - 1).'}\S*/us', $str, $matches);
+		// Don't preserve words. The limit is considered the top limit.
+		// No strings with a length longer than $limit should be returned.
+		if ( ! preg_match('/^.{0,'.$limit.'}\s/us', $str, $matches))
+			return $end_char;
 
-		return rtrim($matches[0]).(strlen($matches[0]) == strlen($str) ? '' : $end_char);
+		return rtrim($matches[0]).((strlen($matches[0]) === strlen($str)) ? '' : $end_char);
 	}
 
 	/**
@@ -145,7 +146,7 @@ class Kohana_Text {
 	 * The following types are supported:
 	 *
 	 * alnum
-	 * :  Upper and lower case a-z, 0-9
+	 * :  Upper and lower case a-z, 0-9 (default)
 	 *
 	 * alpha
 	 * :  Upper and lower case a-z
@@ -164,8 +165,14 @@ class Kohana_Text {
 	 * @return  string
 	 * @uses    UTF8::split
 	 */
-	public static function random($type = 'alnum', $length = 8)
+	public static function random($type = NULL, $length = 8)
 	{
+		if ($type === NULL)
+		{
+			// Default is to generate an alphanumeric string
+			$type = 'alnum';
+		}
+
 		$utf8 = FALSE;
 
 		switch ($type)
@@ -255,9 +262,9 @@ class Kohana_Text {
 	 */
 	public static function censor($str, $badwords, $replacement = '#', $replace_partial_words = TRUE)
 	{
-		foreach ((array) $badwords as $key => $badword)
+		foreach ( (array) $badwords as $key => $badword)
 		{
-			$badwords[$key] = str_replace('\*', '\S*?', preg_quote((string) $badword));
+			$badwords[$key] = str_replace('\*', '\S*?', preg_quote( (string) $badword));
 		}
 
 		$regex = '('.implode('|', $badwords).')';
@@ -531,7 +538,7 @@ class Kohana_Text {
 
 				// In the situation that we need to make a composite number (i.e. twenty-three)
 				// then we need to modify the previous entry
-				if(empty($item))
+				if (empty($item))
 				{
 					array_pop($text);
 
@@ -543,14 +550,14 @@ class Kohana_Text {
 			}
 		}
 
-		if(count($text) > 1)
+		if (count($text) > 1)
 		{
 			$and = array_pop($text);
 		}
 
 		$text = implode(', ', $text);
 
-		if(isset($and))
+		if (isset($and))
 		{
 			$text .= ' and '.$and;
 		}

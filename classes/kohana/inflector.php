@@ -8,8 +8,8 @@
  * @package    Kohana
  * @category   Helpers
  * @author     Kohana Team
- * @copyright  (c) 2007-2009 Kohana Team
- * @license    http://kohanaphp.com/license
+ * @copyright  (c) 2007-2010 Kohana Team
+ * @license    http://kohanaframework.org/license
  */
 class Kohana_Inflector {
 
@@ -97,6 +97,11 @@ class Kohana_Inflector {
 		if ($irregular = array_search($str, Inflector::$irregular))
 		{
 			$str = $irregular;
+		}
+		elseif (preg_match('/us$/', $str))
+		{
+			// http://en.wikipedia.org/wiki/Plural_form_of_words_ending_in_-us
+			// Already singular, do nothing
 		}
 		elseif (preg_match('/[sxz]es$/', $str) OR preg_match('/[^aeioudgkprt]hes$/', $str))
 		{
@@ -200,6 +205,21 @@ class Kohana_Inflector {
 		$str = ucwords(preg_replace('/[\s_]+/', ' ', $str));
 
 		return substr(str_replace(' ', '', $str), 1);
+	}
+
+	/**
+	 * Converts a camel case phrase into a spaced phrase.
+	 *
+	 *     $str = Inflector::decamelize('houseCat');    // "house cat"
+	 *     $str = Inflector::decamelize('kingAllyCat'); // "king ally cat"
+	 *
+	 * @param   string   phrase to camelize
+	 * @param   string   word separator
+	 * @return  string
+	 */
+	public static function decamelize($str, $sep = ' ')
+	{
+		return strtolower(preg_replace('/([a-z])([A-Z])/', '$1'.$sep.'$2', trim($str)));
 	}
 
 	/**

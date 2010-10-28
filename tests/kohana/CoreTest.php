@@ -12,7 +12,7 @@
  * @author     Kohana Team
  * @author     Jeremy Bush <contractfrombelow@gmail.com>
  * @copyright  (c) 2008-2010 Kohana Team
- * @license    http://kohanaphp.com/license
+ * @license    http://kohanaframework.org/license
  */
 class Kohana_CoreTest extends Kohana_Unittest_TestCase
 {
@@ -49,7 +49,24 @@ class Kohana_CoreTest extends Kohana_Unittest_TestCase
 	}
 
 	/**
-	 * If a file can't be found then find_file() should return FALSE if 
+	 * Passing FALSE for the file extension should prevent appending any extension.
+	 * See issue #3214
+	 *
+	 * @test
+	 * @covers  Kohana::find_file
+	 */
+	public function test_find_file_no_extension()
+	{
+		// EXT is manually appened to the _file name_, not passed as the extension
+		$path = Kohana::find_file('classes', $file = 'kohana/core'.EXT, FALSE);
+
+		$this->assertType('string', $path);
+
+		$this->assertStringEndsWith($file, $path);
+	}
+
+	/**
+	 * If a file can't be found then find_file() should return FALSE if
 	 * only a single file was requested, or an empty array if multiple files
 	 * (i.e. configuration files) were requested
 	 *
@@ -441,6 +458,7 @@ class Kohana_CoreTest extends Kohana_Unittest_TestCase
 			array(TRUE, 128, '<small>bool</small> TRUE'),
 			array(array('foobar'), 128, "<small>array</small><span>(1)</span> <span>(\n    0 => <small>string</small><span>(6)</span> \"foobar\"\n)</span>"),
 			array(new StdClass, 128, "<small>object</small> <span>stdClass(0)</span> <code>{\n}</code>"),
+			array("fo\x6F\xFF\x00bar\x8F\xC2\xB110", 128, '<small>string</small><span>(10)</span> "foobar±10"'),
 		);
 	}
 
